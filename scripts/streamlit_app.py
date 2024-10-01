@@ -8,7 +8,9 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_squared_error, mean_absolute_error, r2_score, classification_report
-
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.stattools import adfuller
+from statsmodels.graphics.tsaplots import plot_pacf, plot_acf
 
 # Load data with caching
 @st.cache_data
@@ -75,7 +77,7 @@ def qq_plot(data, column):
 def main():
     st.title("Weather Prediction Australia")
     st.sidebar.title("Table of contents")
-    pages = ["Exploration", "Data Visualization", "Modelling"]
+    pages = ["Exploration", "Data Visualization", "Modelling", "Results"]
     page = st.sidebar.radio("Go to", pages)
 
     # Load data and model
@@ -281,23 +283,73 @@ def main():
         st.pyplot(plt)
 
     elif page == pages[2]:
-        st.write("### Modelling and Predictions")
+        st.write("### Modelling")
         
         # Load data
         df = load_data()
         # Convert categorical variables to numerical
         #categorical_columns = ['Location', 'WindGustDir', 'WindDir9am', 'WindDir3pm','RainToday', 'RainTomorrow']
         #df = pd.get_dummies(df, columns=categorical_columns, drop_first=True, dtype=int)
-        # Load the SARIMAX model
+        
+        features = df.drop(columns=['RainTomorrow_Yes'])
+        target = df['RainTomorrow_Yes']
+
+        # Seasonal decomposition of the target variable
+        result = seasonal_decompose(target, model='additive', period=12)
+
+        # Plot the decomposition
+        plt.figure(figsize=(10, 6))
+        plt.title('Seasonal Decompose')
+        fig = result.plot()
+        st.pyplot(fig)
+
+        # Perform Augmented Dickey-Fuller test to check for stationarity
+        # adf_test = adfuller(target)
+
+        st.write('#### ADF Statistic: -18.422713270952457')
+        st.write('#### p-value: 0.0')
+        #for key, value in adf_test[4].items():
+        #    print('Critical Values:')
+        #    print(f'   {key}, {value}')
+
+        st.write("#### The series is stationary")
+        
+        st.write('### Checking Autocorrelation')
+        target_1 = target.diff().dropna()
+        target_2 = target_1.diff(periods = 12).dropna()
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,7))
+
+        plot_acf(target_2, lags = 36, ax=ax1)
+        plot_pacf(target_2, lags = 36, ax=ax2)
+        st.pyplot(fig)
+
+        # Load the SARIMAX model    
         sarimax_result = load_model()
 
         # Display SARIMAX model summary
         st.write("SARIMAX Model Summary")
         sarimax_summary = sarimax_result.summary()
         st.text(sarimax_summary)
+    elif page == pages[3]:
+        st.write("### Results")
+        # Load data
+        df = load_data()
+        # Convert categorical variables to numerical
+        #categorical_columns = ['Location', 'WindGustDir', 'WindDir9am', 'WindDir3pm','RainToday', 'RainTomorrow']
+        #df = pd.get_dummies(df, columns=categorical_columns, drop_first=True, dtype=int)
         
         features = df.drop(columns=['RainTomorrow_Yes'])
         target = df['RainTomorrow_Yes']
+
+        # Seasonal decomposition of the target variable
+        result = seasonal_decompose(target, model='additive', period=12)
+
+        # Load the SARIMAX model    
+        sarimax_result = load_model()
+
+        sarimax_summary = sarimax_result.summary()
+        
 
         train_features, test_features, train_target, test_target = train_test_split(
         features, target, test_size=0.2, random_state=42)
@@ -330,5 +382,54 @@ def main():
         report = classification_report(test_target, test_predictions_binary, output_dict=True)
         st.text(classification_report(test_target, test_predictions_binary))
 
+
+        train_features, test_features, train_target, test_target = train_test_split(
+        features, target, test_size=0.2, random_state=42)
+
+        # Make predictions on the test data
+        test_predictions = sarimax_result.predict(start=len(train_target), 
+                                          end=len(train_target) + len(test_target) - 1, 
+                                          exog=test_features)
+        
+                       
+        test_predictions_binary = np.where(test_predictions > 0.3, 1, 0)
+
+        # Create a new DataFrame with the added column
+        test_features_new = test_features.copy()
+        test_features_new['test_predictions_binary_new'] = test_predictions_binary
+        test_features_new['RainTomorrow_Yes'] = test_target
+
+        # Set start and end dates
+        start_date = pd.to_datetime('2017-04-01')
+        end_date = pd.to_datetime('2017-07-15')
+
+        # Get the first 5 location columns
+        location_columns = test_features_new.columns[test_features_new.columns.str.startswith('Location_')][:5]
+        
+        # Iterate over location columns and plot
+        for location in location_columns:
+            # Filter based on location and date range
+            filtered_data = test_features_new[test_features_new[location] == 1]
+            filtered_data = filtered_data[(filtered_data.index >= start_date) & (filtered_data.index <= end_date)]
+
+            # Check if there's data for the location
+            if not filtered_data.empty:
+                # Extract relevant columns
+                plot_data = filtered_data[['test_predictions_binary_new', 'RainTomorrow_Yes']]
+
+                # Plot the data as dots with transparency
+                plt.figure()
+                plt.scatter(plot_data.index, plot_data['RainTomorrow_Yes'], label='Actual', alpha=0.5)
+                plt.scatter(plot_data.index, plot_data['test_predictions_binary_new'], label='Predicted', alpha=0.5)
+                plt.title(f"Predicted vs. Actual Rain_Tomorrow for Location_{location}")
+                plt.xlabel("Date")
+                plt.ylabel("Rain_Tomorrow")
+                plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+                plt.xlim(start_date, end_date)  # Set x-axis limits
+                plt.legend()
+                st.pyplot(plt.gcf())  # Use st.pyplot to display the plot in Streamlit
+            else:
+                print(f"No data found for Location_{location}")
+        
 if __name__ == "__main__":
     main()
