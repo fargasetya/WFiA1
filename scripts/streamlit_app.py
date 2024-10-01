@@ -87,19 +87,27 @@ def main():
     columns_to_check = ['Evaporation', 'Sunshine', 'Cloud9am', 'Cloud3pm']
 
     if page == pages[0]:
-        st.write("## Presentation of data")
-
+        st.header("Exploration")
+        
+        # Display presentation of data
+        st.subheader("Presentation of Data")
+        st.write("In this section, we'll explore the structure and characteristics of our weather dataset.")
+        
         # Display first few lines of df
-        st.write("### First Few lines of df")
-        st.write(df.head())
+        st.subheader("First Few Lines of DataFrame")
+        st.dataframe(df.head())
+        st.caption("These rows show the initial structure of our dataset.")
 
         # Display some statistics
-        st.write("### Some statistics")
-        st.write(df.describe())
+        st.subheader("Some Statistics")
+        st.write("We'll examine various statistical measures to understand the distribution of values.")
+        st.dataframe(df.describe())
 
         # Display data types
         st.subheader("Data Types")
         st.code(df.dtypes)
+        st.caption("This shows the data types for each column in our dataset.")
+
         if st.checkbox("Show NA"):
             st.dataframe(df.isna().sum())
 
@@ -110,15 +118,27 @@ def main():
 
         # Display message about null and extreme values
         st.subheader("Note")
-        st.write("Null values and extreme values need to be dealt with before proceeding with further analysis.")         
-
+        st.write("""
+        Important observations:
+        1. Null values exist in certain columns and may need imputation.
+        2. Extreme values might affect model performance and should be handled appropriately.
+        """)
+        st.caption("Null and extreme values require careful consideration before proceeding with analysis.")
     elif page == pages[1]:
-        st.write("### Data Visualization")
+        st.header("Data Visualization")
         
+        # Display presentation of data
+        st.subheader("Data Visualization")
+        st.write("In this section, we'll explore the distribution of our weather dataset and perform initial preprocessing steps.")
+        
+        # Display null value counts
+        st.subheader("Null Value Counts")
         null_counts = df.isnull().sum()
         filtered_null_counts = null_counts[null_counts > 0]
-        st.write("#### Seems like there are too many nulls in Evaporation, Sunshine, Cloud9am and Cloud3pm. This data may be valuable for training.")
+        st.dataframe(filtered_null_counts)
+        st.caption("We observe high null values in Evaporation, Sunshine, Cloud9am, and Cloud3pm. These columns contain valuable information for training our model.")
 
+        # Plot null value counts
         plt.figure(figsize=(10, 6))
         filtered_null_counts.plot(kind='bar')
         plt.title('Count of Null Values per Column')
@@ -128,10 +148,12 @@ def main():
         plt.tight_layout()
         st.pyplot(plt)
 
-        st.write("#### Checking if of them are normally distributed. If yes, we can replace with mean/median/mode")
-        columns_to_check = ['Evaporation', 'Sunshine', 'Cloud9am', 'Cloud3pm']
-
-        # Plot histograms for each column
+        # Normality check
+        st.subheader("Normality Check")
+        st.write("We'll examine whether the suspected seasonal columns are normally distributed.")
+        
+        # Histograms for each column
+        st.subheader("Histograms")
         for column in columns_to_check:
             fig, ax = plt.subplots()
             ax.hist(df[column].dropna(), bins=30, alpha=0.5, color='skyblue', edgecolor='black')
@@ -140,28 +162,29 @@ def main():
             ax.set_ylabel('Frequency')
             st.pyplot(fig)
 
-        # Generate QQ-Plots for normality check
-        st.write("#### Histograms can be misleading, lets do QQ Plots to check normality")
+        # QQ-plots for normality check
+        st.subheader("QQ Plots")
+        st.write("QQ plots provide a more reliable way to check for normality.")
         for column in columns_to_check:
             fig = qq_plot(df[column].dropna(), column)
             st.pyplot(fig)
 
-        st.write("#### None of these columns are normally distributed. Replacing with mean/median is not recommended.")
-        st.write("#### Now, let's check how they are distributed over time based on Location.")
+        st.write("""
+        Based on these visualizations, we conclude that none of these columns are normally distributed. Replacing with mean/median is not recommended.
+        """)
 
-        # Convert 'Date' column to datetime if not already
-        groupedDf = df.copy()
+        # Time-based analysis
+        st.subheader("Time-based Distribution")
+        st.write("Now, let's check how these variables are distributed over time based on Location.")
         
-        # Group the data by Location and Date and calculate the mean for each numeric column
+        groupedDf = df.copy()
         numeric_columns = groupedDf.select_dtypes(include=[np.number]).columns
         grouped = groupedDf.groupby(['Location', 'Date'])[numeric_columns].mean().reset_index()
 
         locations = grouped['Location'].unique()
 
-        # Create a figure and axes for the time distribution
         fig, ax = plt.subplots(figsize=(12, 8))
 
-        # Iterate over each location and plot Evaporation, Sunshine, Cloud9am, and Cloud3pm
         for location in locations:
             location_data = grouped[grouped['Location'] == location]
             ax.plot(location_data['Date'], location_data['Evaporation'], label=f'{location} Evaporation')
@@ -169,29 +192,29 @@ def main():
             ax.plot(location_data['Date'], location_data['Cloud9am'], label=f'{location} Cloud9am')
             ax.plot(location_data['Date'], location_data['Cloud3pm'], label=f'{location} Cloud3pm')
 
-        # Set labels and title
         ax.set_xlabel('Date')
         ax.set_ylabel('Value')
         ax.set_title('Distribution by Location and Time')
         ax.legend(ncol=4, bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
         st.pyplot(fig)
 
-        st.write("#### Seems like the data until end of 2008 is choppy so we can drop the data before this date. Also seems like for Evaporation and Sunshine, the data is pretty seasonal, so we can replace nulls using interpolation.")
+        st.write("""
+        Observations:
+        1. Data until the end of 2008 appears choppy, so we can drop data before this date.
+        2. Evaporation and Sunshine show strong seasonality patterns, suggesting we can replace nulls using interpolation.
+        """)
 
-        # Interpolate missing values for seasonal columns
+        # Interpolate missing values
         df.loc[:, ['Evaporation', 'Sunshine', 'Cloud9am', 'Cloud3pm']] = df[['Evaporation', 'Sunshine', 'Cloud9am', 'Cloud3pm']].interpolate(method='linear', limit_direction='forward')
 
-        # Check null values after interpolation
-        st.write("#### Checking remaining null values after interpolation for seasonal data")
+        # Check remaining null values
         null_counts = df.isnull().sum()
-
-        # Filter out columns with zero null values
         filtered_null_counts = null_counts[null_counts > 0]
 
         if not filtered_null_counts.empty:
             plt.figure(figsize=(10, 6))
             filtered_null_counts.plot(kind='bar')
-            plt.title('Count of Null Values per Column')
+            plt.title('Count of Null Values per Column After Interpolation')
             plt.xlabel('Columns')
             plt.ylabel('Number of Null Values')
             plt.xticks(rotation=90)
@@ -200,12 +223,11 @@ def main():
         else:
             st.write("No null values remain after interpolation.")
 
-        # Drop NA values for categorical columns 'RainToday' and 'RainTomorrow'
-        st.write("#### We drop null values in 'RainToday' or 'RainTomorrow'")
+        # Drop NA values for categorical columns
         df = df.dropna(subset=['RainToday', 'RainTomorrow'])
 
-        # Impute missing values for remaining columns
-        st.write("#### We now replace all null based on data types - Mean for Floats and mode for object.")
+        # Impute missing values
+        st.write("Replacing null values based on data types:")
         for column in df.columns:
             if df[column].dtype == "float64":
                 df[column] = df[column].fillna(df[column].mean())
@@ -213,9 +235,7 @@ def main():
                 df[column] = df[column].fillna(df[column].mode()[0])
 
         # Final null value check
-        st.write("#### Checking again is there are any more null values")
         null_counts = df.isnull().sum()
-
         if null_counts.sum() == 0:
             st.write("No more missing values remain in the dataset.")
         else:
@@ -224,8 +244,9 @@ def main():
             st.dataframe(df.isna().sum())
 
         # Handle extreme values
-        st.write("### Handling extreme values")
-
+        st.subheader("Handling Extreme Values")
+        st.write("We'll identify and handle outliers in quantitative variables.")
+        
         quantitative_variables = ['MinTemp', 'MaxTemp', 'Rainfall', 'Evaporation', 'Sunshine', 
                                 'WindGustSpeed', 'WindSpeed9am', 'WindSpeed3pm', 'Humidity9am', 
                                 'Humidity3pm', 'Pressure9am', 'Pressure3pm', 'Temp9am', 'Temp3pm', 'RainTomorrow', 'RainToday']
@@ -257,16 +278,18 @@ def main():
             plt.tight_layout()
             plt.show()
 
-        st.write("#### Boxplots for quantitative variables")
+        st.write("Boxplots for quantitative variables")
         plot_boxplots(df, quantitative_variables)
         st.pyplot(plt)
 
         # Handle outlier in 'Evaporation'
-        st.write("#### All of the outliers lie within range of explainable extreme weather events except for Evaporation which can't be more than 100.")
         df['Evaporation'] = np.where(df['Evaporation'] > 100, df['Evaporation'].mean(), df['Evaporation'])
 
         # Plot the correlation matrix
-        st.write("#### Correlation matrix to check which features are most important.")
+        # Correlation matrix
+        st.subheader("Correlation Matrix")
+        st.write("We'll calculate the correlation between quantitative variables and RainTomorrow.")
+        
         df_corr = df.copy()
         df_corr['RainTomorrow'] = df_corr['RainTomorrow'].map({'Yes': 1, 'No': 0})
         df_corr['RainToday'] = df_corr['RainToday'].map({'Yes': 1, 'No': 0})
@@ -283,14 +306,12 @@ def main():
         st.pyplot(plt)
 
     elif page == pages[2]:
-        st.write("### Modelling")
-        
+        st.header("Modelling")
+    
         # Load data
         df = load_data()
-        # Convert categorical variables to numerical
-        #categorical_columns = ['Location', 'WindGustDir', 'WindDir9am', 'WindDir3pm','RainToday', 'RainTomorrow']
-        #df = pd.get_dummies(df, columns=categorical_columns, drop_first=True, dtype=int)
         
+        # Feature selection and target definition
         features = df.drop(columns=['RainTomorrow_Yes'])
         target = df['RainTomorrow_Yes']
 
@@ -299,7 +320,7 @@ def main():
 
         # Plot the decomposition
         plt.figure(figsize=(10, 6))
-        plt.title('Seasonal Decompose')
+        plt.title('Seasonal Decomposition of RainTomorrow')
         fig = result.plot()
         st.pyplot(fig)
 
@@ -308,22 +329,37 @@ def main():
 
         st.write('#### ADF Statistic: -18.422713270952457')
         st.write('#### p-value: 0.0')
-        #for key, value in adf_test[4].items():
-        #    print('Critical Values:')
-        #    print(f'   {key}, {value}')
-
-        st.write("#### The series is stationary")
         
-        st.write('### Checking Autocorrelation')
+        st.write("""
+        #### Interpretation:
+        - The series is stationary if the p-value is less than 0.05.
+        - We observe a very low p-value (0.0), indicating that the series is likely stationary.
+        """)
+        st.write("""
+        #### Conclusion:
+        Based on the Augmented Dickey-Fuller test results, we conclude that the RainTomorrow series is stationary. This is crucial for building reliable time series models.
+        """)
+
+        st.write("Checking Autocorrelation")
+        
+        # First-order difference
         target_1 = target.diff().dropna()
-        target_2 = target_1.diff(periods = 12).dropna()
+        
+        # Second-order difference (12 periods)
+        target_2 = target_1.diff(periods=12).dropna()
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,7))
 
-        plot_acf(target_2, lags = 36, ax=ax1)
-        plot_pacf(target_2, lags = 36, ax=ax2)
+        plot_acf(target_2, lags=36, ax=ax1)
+        plot_pacf(target_2, lags=36, ax=ax2)
         st.pyplot(fig)
 
+        st.write("""
+        #### Interpretation of Autocorrelation Plot:
+        - The autocorrelation function (ACF) shows the correlation between the series and lagged versions of itself.
+        - The partial autocorrelation function (PACF) helps identify the order of differencing required.
+        """)
+        
         # Load the SARIMAX model    
         sarimax_result = load_model()
 
@@ -331,67 +367,83 @@ def main():
         st.write("SARIMAX Model Summary")
         sarimax_summary = sarimax_result.summary()
         st.text(sarimax_summary)
-    elif page == pages[3]:
-        st.write("### Results")
-        # Load data
-        df = load_data()
-        # Convert categorical variables to numerical
-        #categorical_columns = ['Location', 'WindGustDir', 'WindDir9am', 'WindDir3pm','RainToday', 'RainTomorrow']
-        #df = pd.get_dummies(df, columns=categorical_columns, drop_first=True, dtype=int)
+
+        st.write("""
+        #### Interpreting the SARIMAX Model Summary:
+        - Order: p, d, q parameters represent the autoregressive, differencing, and moving average components.
+        - Seasonal parameters (P, D, Q) indicate the seasonal ARIMA model used.
+        - AIC and BIC values measure the relative quality of the model.
+        - The significance of coefficients indicates the importance of each term in the model.
+        """)
         
+        st.write("""
+        #### Next Steps:
+        1. Evaluate the model's performance metrics (e.g., RMSE, MAPE).
+        2. Compare the SARIMAX model with other time series models like ARIMA or Prophet.
+        3. Cross-validate the model using techniques like walk-forward optimization.
+        4. Visualize the residuals to check for remaining patterns or outliers.
+        """)
+    elif page == pages[3]:
+        st.header("Results")
+        
+        # Load data and prepare features/target
+        df = load_data()
         features = df.drop(columns=['RainTomorrow_Yes'])
         target = df['RainTomorrow_Yes']
 
         # Seasonal decomposition of the target variable
         result = seasonal_decompose(target, model='additive', period=12)
 
-        # Load the SARIMAX model    
+        # Load the SARIMAX model
         sarimax_result = load_model()
 
+        # Display SARIMAX model summary
+        st.write("SARIMAX Model Summary")
         sarimax_summary = sarimax_result.summary()
-        
+        st.text(sarimax_summary)
 
+        # Split data into training and testing sets
         train_features, test_features, train_target, test_target = train_test_split(
-        features, target, test_size=0.2, random_state=42)
+            features, target, test_size=0.2, random_state=42
+        )
 
-        # Define your features and target variables
+        # Make predictions on training data
         train_predictions = sarimax_result.predict(start=0, end=len(train_target)-1, exog=train_features)
-        st.text(train_predictions.describe())
-        # Make predictions on the test data
-        test_predictions = sarimax_result.predict(start=len(train_target), 
-                                          end=len(train_target) + len(test_target) - 1, 
-                                          exog=test_features)
+        
+        # Display training set predictions statistics
+        st.write("#### Training Set Predictions Statistics")
+        st.dataframe(train_predictions.describe())
+
+        # Make predictions on testing data
+        test_predictions = sarimax_result.predict(start=len(train_target), end=len(train_target)+len(test_target)-1, exog=test_features)
         
         # Convert predictions to binary classifications
         test_predictions_binary = np.where(test_predictions > 0.5, 1, 0)
-        # Calculate accuracy
+        
+        # Calculate performance metrics
         accuracy = accuracy_score(test_target, test_predictions_binary)
-        st.write(f"### Accuracy: {accuracy}")
-
-        # Calculate other metrics
         mse = mean_squared_error(test_target, test_predictions)
         mae = mean_absolute_error(test_target, test_predictions)
         r2 = r2_score(test_target, test_predictions)
 
-        st.write(f"### Mean Squared Error (MSE): {mse}")
-        st.write(f"### Mean Absolute Error (MAE): {mae}")
-        st.write(f"### R^2 Score: {r2}")
+        st.write(f"#### Model Performance Metrics:")
+        st.write(f"Accuracy: {accuracy:.2f}")
+        st.write(f"Mean Squared Error (MSE): {mse:.2f}")
+        st.write(f"Mean Absolute Error (MAE): {mae:.2f}")
+        st.write(f"R^2 Score: {r2:.2f}")
 
         # Display classification report
-        st.write("### Classification Report")
+        st.write("#### Classification Report")
         report = classification_report(test_target, test_predictions_binary, output_dict=True)
         st.text(classification_report(test_target, test_predictions_binary))
 
-
-        train_features, test_features, train_target, test_target = train_test_split(
-        features, target, test_size=0.2, random_state=42)
-
-        # Make predictions on the test data
-        test_predictions = sarimax_result.predict(start=len(train_target), 
-                                          end=len(train_target) + len(test_target) - 1, 
-                                          exog=test_features)
+        # Plot predicted vs. actual values for specific locations
+        train_features, test_features, train_target, test_target = train_test_split(features, target, test_size=0.2, random_state=42)
         
-                       
+        # Make predictions on test data
+        test_predictions = sarimax_result.predict(start=len(train_target), end=len(train_target)+len(test_target)-1, exog=test_features)
+        
+        # Convert predictions to binary classifications
         test_predictions_binary = np.where(test_predictions > 0.3, 1, 0)
 
         # Create a new DataFrame with the added column
@@ -418,7 +470,7 @@ def main():
                 plot_data = filtered_data[['test_predictions_binary_new', 'RainTomorrow_Yes']]
 
                 # Plot the data as dots with transparency
-                plt.figure()
+                plt.figure(figsize=(12, 6))
                 plt.scatter(plot_data.index, plot_data['RainTomorrow_Yes'], label='Actual', alpha=0.5)
                 plt.scatter(plot_data.index, plot_data['test_predictions_binary_new'], label='Predicted', alpha=0.5)
                 plt.title(f"Predicted vs. Actual Rain_Tomorrow for Location_{location}")
@@ -429,7 +481,24 @@ def main():
                 plt.legend()
                 st.pyplot(plt.gcf())  # Use st.pyplot to display the plot in Streamlit
             else:
-                print(f"No data found for Location_{location}")
+                st.write(f"No data found for Location_{location}")
+
+        st.write("""
+        #### Interpretation of Results:
+        - The accuracy score indicates the proportion of correctly predicted instances.
+        - MSE measures the average squared difference between observed and predicted values.
+        - MAE provides the average absolute difference between observed and predicted values.
+        - R^2 score ranges from 0 to 1, with higher values indicating better fit.
+        """)
+        
+        st.write("""
+        #### Next Steps:
+        1. Analyze residuals to check for patterns or outliers.
+        2. Compare the SARIMAX model with other time series models (e.g., ARIMA, Prophet).
+        3. Perform cross-validation to assess model robustness.
+        4. Explore feature importance to identify crucial predictors.
+        5. Consider ensemble methods to potentially improve model performance.
+        """)
         
 if __name__ == "__main__":
     main()
