@@ -84,19 +84,27 @@ def get_mode_for_feature(df, feature):
     return df[feature].mode().iloc[0]
 
 def predict_rain(model, input_features):
+    # Create a DataFrame from input features
     input_df = pd.DataFrame([input_features])
+
+    # Define all possible features that the model expects
     expected_features = ['MinTemp', 'MaxTemp', 'Rainfall', 'Evaporation', 'Sunshine', 'WindGustSpeed', 'WindSpeed9am', 'WindSpeed3pm', 'Humidity9am', 'Humidity3pm', 'Pressure9am', 'Pressure3pm', 'Cloud9am', 'Cloud3pm', 'Temp9am', 'Temp3pm', 'Location_Albany', 'Location_Albury', 'Location_AliceSprings', 'Location_BadgerysCreek', 'Location_Ballarat', 'Location_Bendigo', 'Location_Brisbane', 'Location_Cairns', 'Location_Canberra', 'Location_Cobar', 'Location_CoffsHarbour', 'Location_Dartmoor', 'Location_Darwin', 'Location_GoldCoast', 'Location_Hobart', 'Location_Katherine', 'Location_Launceston', 'Location_Melbourne', 'Location_MelbourneAirport', 'Location_Mildura', 'Location_Moree', 'Location_MountGambier', 'Location_MountGinini', 'Location_Newcastle', 'Location_Nhil', 'Location_NorahHead', 'Location_NorfolkIsland', 'Location_Nuriootpa', 'Location_PearceRAAF', 'Location_Perth', 'Location_PerthAirport', 'Location_Portland', 'Location_Richmond', 'Location_Sale', 'Location_SalmonGums', 'Location_Sydney', 'Location_SydneyAirport', 'Location_Townsville', 'Location_Tuggeranong', 'Location_Uluru', 'Location_WaggaWagga', 'Location_Walpole', 'Location_Watsonia', 'Location_Williamtown', 'Location_Witchcliffe', 'Location_Wollongong', 'Location_Woomera', 'WindGustDir_ENE', 'WindGustDir_ESE', 'WindGustDir_N', 'WindGustDir_NE', 'WindGustDir_NNE', 'WindGustDir_NNW', 'WindGustDir_NW', 'WindGustDir_S', 'WindGustDir_SE', 'WindGustDir_SSE', 'WindGustDir_SSW', 'WindGustDir_SW', 'WindGustDir_W', 'WindGustDir_WNW', 'WindGustDir_WSW', 'WindDir9am_ENE', 'WindDir9am_ESE', 'WindDir9am_N', 'WindDir9am_NE', 'WindDir9am_NNE', 'WindDir9am_NNW', 'WindDir9am_NW', 'WindDir9am_S', 'WindDir9am_SE', 'WindDir9am_SSE', 'WindDir9am_SSW', 'WindDir9am_SW', 'WindDir9am_W', 'WindDir9am_WNW', 'WindDir9am_WSW', 'WindDir3pm_ENE', 'WindDir3pm_ESE', 'WindDir3pm_N', 'WindDir3pm_NE', 'WindDir3pm_NNE', 'WindDir3pm_NNW', 'WindDir3pm_NW', 'WindDir3pm_S', 'WindDir3pm_SE', 'WindDir3pm_SSE', 'WindDir3pm_SSW', 'WindDir3pm_SW', 'WindDir3pm_W', 'WindDir3pm_WNW', 'WindDir3pm_WSW', 'RainToday_Yes']
+
+    # Fill missing features with default values (e.g., 0 or mean)
     for feature in expected_features:
         if feature not in input_df.columns:
-            input_df[feature] = 0
+            input_df[feature] = 0  # Or set a more appropriate default value
+
+    # Reorder columns to match model's expectations
     input_df = input_df[expected_features]
+
+    # Make prediction
     try:
         prediction = model.predict(input_df)
         return prediction
     except KeyError as e:
         print(f"KeyError: {e}")
         return None
-
 
 # Assume these are all your features after encoding
 model_features = ['MinTemp', 'MaxTemp', 'Rainfall', 'Evaporation', 'Sunshine', 'WindGustSpeed', 'WindSpeed9am', 'WindSpeed3pm', 'Humidity9am', 'Humidity3pm', 'Pressure9am', 'Pressure3pm', 'Cloud9am', 'Cloud3pm', 'Temp9am', 'Temp3pm', 'Location_Albany', 'Location_Albury', 'Location_AliceSprings', 'Location_BadgerysCreek', 'Location_Ballarat', 'Location_Bendigo', 'Location_Brisbane', 'Location_Cairns', 'Location_Canberra', 'Location_Cobar', 'Location_CoffsHarbour', 'Location_Dartmoor', 'Location_Darwin', 'Location_GoldCoast', 'Location_Hobart', 'Location_Katherine', 'Location_Launceston', 'Location_Melbourne', 'Location_MelbourneAirport', 'Location_Mildura', 'Location_Moree', 'Location_MountGambier', 'Location_MountGinini', 'Location_Newcastle', 'Location_Nhil', 'Location_NorahHead', 'Location_NorfolkIsland', 'Location_Nuriootpa', 'Location_PearceRAAF', 'Location_Penrith', 'Location_Perth', 'Location_PerthAirport', 'Location_Portland', 'Location_Richmond', 'Location_Sale', 'Location_SalmonGums', 'Location_Sydney', 'Location_SydneyAirport', 'Location_Townsville', 'Location_Tuggeranong', 'Location_Uluru', 'Location_WaggaWagga', 'Location_Walpole', 'Location_Watsonia', 'Location_Williamtown', 'Location_Witchcliffe', 'Location_Wollongong', 'Location_Woomera', 'WindGustDir_ENE', 'WindGustDir_ESE', 'WindGustDir_N', 'WindGustDir_NE', 'WindGustDir_NNE', 'WindGustDir_NNW', 'WindGustDir_NW', 'WindGustDir_S', 'WindGustDir_SE', 'WindGustDir_SSE', 'WindGustDir_SSW', 'WindGustDir_SW', 'WindGustDir_W', 'WindGustDir_WNW', 'WindGustDir_WSW', 'WindDir9am_ENE', 'WindDir9am_ESE', 'WindDir9am_N', 'WindDir9am_NE', 'WindDir9am_NNE', 'WindDir9am_NNW', 'WindDir9am_NW', 'WindDir9am_S', 'WindDir9am_SE', 'WindDir9am_SSE', 'WindDir9am_SSW', 'WindDir9am_SW', 'WindDir9am_W', 'WindDir9am_WNW', 'WindDir9am_WSW', 'WindDir3pm_ENE', 'WindDir3pm_ESE', 'WindDir3pm_N', 'WindDir3pm_NE', 'WindDir3pm_NNE', 'WindDir3pm_NNW', 'WindDir3pm_NW', 'WindDir3pm_S', 'WindDir3pm_SE', 'WindDir3pm_SSE', 'WindDir3pm_SSW', 'WindDir3pm_SW', 'WindDir3pm_W', 'WindDir3pm_WNW', 'WindDir3pm_WSW', 'RainToday_Yes']
@@ -443,6 +451,7 @@ def main():
         X_resampled, y_resampled = smote.fit_resample(X, y)
 
         # Create a new DataFrame with the resampled data
+        #    
 
         df = pd.concat([X_resampled, y_resampled], axis=1)
         features = df.drop(columns=['RainTomorrow_Yes'])
@@ -521,6 +530,10 @@ def main():
         # Make predictions on training data
         train_predictions = sarimax_result.predict(start=0, end=len(train_target)-1, exog=train_features)
         
+        # Display training set predictions statistics
+        st.write("#### Training Set Predictions Statistics")
+        st.dataframe(train_predictions.describe())
+
         # Make predictions on testing data
         test_predictions = sarimax_result.predict(start=len(train_target), end=len(train_target)+len(test_target)-1, exog=test_features)
         
@@ -533,9 +546,16 @@ def main():
         mae = mean_absolute_error(test_target, test_predictions)
         r2 = r2_score(test_target, test_predictions)
 
+        st.write(f"#### Model Performance Metrics:")
+        st.write(f"Accuracy: {accuracy:.2f}")
+        st.write(f"Mean Squared Error (MSE): {mse:.2f}")
+        st.write(f"Mean Absolute Error (MAE): {mae:.2f}")
+        st.write(f"R^2 Score: {r2:.2f}")
+
         # Display classification report
+        st.write("#### Classification Report")
         report = classification_report(test_target, test_predictions_binary, output_dict=True)
-        #st.text(classification_report(test_target, test_predictions_binary))
+        st.text(classification_report(test_target, test_predictions_binary))
         
         # Plot predicted vs. actual values for specific locations
         train_features, test_features, train_target, test_target = train_test_split(features, target, test_size=0.2, random_state=42)
@@ -602,129 +622,67 @@ def main():
     
     elif page == pages[4]:  # Add new 'Prediction' page
         st.header("Predict RainTomorrow")
+        
+        # List the features required for the model (example features)
+        location_options = ["Location_Albany", "Location_Albury", "Location_AliceSprings",
+                        "Location_BadgerysCreek", "Location_Ballarat", "Location_Bendigo",
+                        "Location_Brisbane", "Location_Cairns", "Location_Canberra",
+                        "Location_Cobar", "Location_CoffsHarbour", "Location_Dartmoor",
+                        "Location_Darwin", "Location_GoldCoast", "Location_Hobart",
+                        "Location_K Katherine", "Location_Launceston", "Location_Melbourne",
+                        "Location_MelbourneAirport", "Location_Mildura", "Location_Moree",
+                        "Location_MountGambier", "Location_MountGinini", "Location_Newcastle",
+                        "Location_Nhil", "Location_NorahHead", "Location_NorfolkIsland",
+                        "Location_Nuriootpa", "Location_PearceRAAF", "Location_Perth",
+                        "Location_PerthAirport", "Location_Portland", "Location_Richmond",
+                        "Location_Sale", "Location_SalmonGums", "Location_Sydney",
+                        "Location_SydneyAirport", "Location_Townsville", "Location_Tuggeranong",
+                        "Location_Uluru", "Location_WaggaWagga", "Location_Walpole",
+                        "Location_Watsonia", "Location_Williamtown", "Location_Witchcliffe",
+                        "Location_Wollongong", "Location_Woomera"]
 
-        # Location selection
-        location_options = [
-            "Location_Albany", "Location_Albury", "Location_AliceSprings",
-            "Location_BadgerysCreek", "Location_Ballarat", "Location_Bendigo",
-            "Location_Brisbane", "Location_Cairns", "Location_Canberra",
-            "Location_Cobar", "Location_CoffsHarbour", "Location_Dartmoor",
-            "Location_Darwin", "Location_GoldCoast", "Location_Hobart",
-            "Location_Katherine", "Location_Launceston", "Location_Melbourne",
-            "Location_MelbourneAirport", "Location_Mildura", "Location_Moree",
-            "Location_MountGambier", "Location_MountGinini", "Location_Newcastle",
-            "Location_Nhil", "Location_NorahHead", "Location_NorfolkIsland",
-            "Location_Nuriootpa", "Location_PearceRAAF", "Location_Perth",
-            "Location_PerthAirport", "Location_Portland", "Location_Richmond",
-            "Location_Sale", "Location_SalmonGums", "Location_Sydney",
-            "Location_SydneyAirport", "Location_Townsville", "Location_Tuggeranong",
-            "Location_Uluru", "Location_WaggaWagga", "Location_Walpole",
-            "Location_Watsonia", "Location_Williamtown", "Location_Witchcliffe",
-            "Location_Wollongong", "Location_Woomera", "Location_Penrith"
-        ]
+        # Input for the location (one-hot encoding)
         location = st.selectbox("Location", location_options)
-
-        # Temperature inputs
+        
+        # Manually create one-hot encoding for the selected location
+        location_features = {loc: 0 for loc in location_options}  # Initialize all locations to 0
+        location_features[location] = 1  # Set the selected location to 1
+        
+        # Other inputs for the model
         min_temp = st.number_input("Min Temp", value=15.0)
         max_temp = st.number_input("Max Temp", value=25.0)
-        temp_9am = st.number_input("Temp 9AM", value=18.0)
-        temp_3pm = st.number_input("Temp 3PM", value=22.0)
-
-        # Humidity inputs
         humidity_9am = st.number_input("Humidity 9AM", value=80.0)
         humidity_3pm = st.number_input("Humidity 3PM", value=50.0)
-
-        # Wind inputs
         wind_gust_speed = st.number_input("Wind Gust Speed", value=30.0)
-        wind_speed_9am = st.number_input("Wind Speed 9AM", value=20.0)
-        wind_speed_3pm = st.number_input("Wind Speed 3PM", value=25.0)
-
-        # Pressure inputs
         pressure_9am = st.number_input("Pressure 9AM", value=1010.0)
         pressure_3pm = st.number_input("Pressure 3PM", value=1005.0)
-
-        # Cloud inputs
         cloud_9am = st.number_input("Cloud 9AM", value=3)
         cloud_3pm = st.number_input("Cloud 3PM", value=5)
-
-        # Rainfall inputs
-        rainfall = st.number_input("Rainfall", value=0.5)
-        evaporation = st.number_input("Evaporation", value=5.0)
-
-        # Sunshine input
-        sunshine = st.number_input("Sunshine", value=8.0)
-
-        # Wind direction inputs
-        wind_gust_dir = st.selectbox("Wind Gust Direction", ["ENE", "ESE", "N", "NE", "NNE", "NNW", "NW", "S", "SE", "SSE", "SSW", "SW", "W", "WNW", "WSW"])
-        wind_dir_9am = st.selectbox("Wind Dir 9AM", ["ENE", "ESE", "N", "NE", "NNE", "NNW", "NW", "S", "SE", "SSE", "SSW", "SW", "W", "WNW", "WSW"])
-        wind_dir_3pm = st.selectbox("Wind Dir 3PM", ["ENE", "ESE", "N", "NE", "NNE", "NNW", "NW", "S", "SE", "SSE", "SSW", "SW", "W", "WNW", "WSW"])
-
-        # Rain today input
         rain_today = st.selectbox("Rain Today", ["Yes", "No"])
-
+        
         # Convert categorical features to match the model's input format
-        location_features = {loc: 0 for loc in location_options}
-        location_features[location] = 1
-
-        wind_gust_dir_features = {
-            f'WindGustDir_{dir}': 1 if dir == wind_gust_dir else 0
-            for dir in ["ENE", "ESE", "N", "NE", "NNE", "NNW", "NW", "S", "SE", "SSE", "SSW", "SW", "W", "WNW", "WSW"]
-        }
-
-        wind_dir_9am_features = {
-            f'WindDir9am_{dir}': 1 if dir == wind_dir_9am else 0
-            for dir in ["ENE", "ESE", "N", "NE", "NNE", "NNW", "NW", "S", "SE", "SSE", "SSW", "SW", "W", "WNW", "WSW"]
-        }
-
-        wind_dir_3pm_features = {
-            f'WindDir3pm_{dir}': 1 if dir == wind_dir_3pm else 0
-            for dir in ["ENE", "ESE", "N", "NE", "NNE", "NNW", "NW", "S", "SE", "SSE", "SSW", "SW", "W", "WNW", "WSW"]
-        }
-
         rain_today_yes = 1 if rain_today == "Yes" else 0
-
+        
         # Collect all input features into a single dictionary
         input_features = {
             "MinTemp": min_temp,
             "MaxTemp": max_temp,
-            "Rainfall": rainfall,
-            "Evaporation": evaporation,
-            "Sunshine": sunshine,
-            "WindGustSpeed": wind_gust_speed,
-            "WindSpeed9am": wind_speed_9am,
-            "WindSpeed3pm": wind_speed_3pm,
             "Humidity9am": humidity_9am,
             "Humidity3pm": humidity_3pm,
+            "WindGustSpeed": wind_gust_speed,
             "Pressure9am": pressure_9am,
             "Pressure3pm": pressure_3pm,
             "Cloud9am": cloud_9am,
             "Cloud3pm": cloud_3pm,
-            "Temp9am": temp_9am,
-            "Temp3pm": temp_3pm,
             "RainToday_Yes": rain_today_yes
         }
 
-        # Update input_features with location, wind direction, and other features
+        # Merge the one-hot encoded location features into the input features
         input_features.update(location_features)
-        input_features.update(wind_gust_dir_features)
-        input_features.update(wind_dir_9am_features)
-        input_features.update(wind_dir_3pm_features)
 
         # Load the trained model
-        model = load_model2()
-
-        # Ensure input_features aligns with exog_names
-        input_features = {name: input_features[name] for name in model.model.exog_names}
-
-
-        # Load the trained model
-        model = load_model2()
-
-        print(model.model.exog_names)
-
-        # Ensure input_features aligns with exog_names
-        input_features = {name: input_features[name] for name in model.model.exog_names}
-
+        model = load_model()
+        print(input_features)
         # Button to trigger the prediction
         if st.button("Predict"):
             result = predict_rain(model, input_features)
